@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import './App.css'; // Importing our new CSS classes
 
 function App() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '' });
 
   useEffect(() => {
     const apiUrl = process.env.REACT_APP_WORDPRESS_API_URL;
 
     fetch(apiUrl)
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not look right");
+        }
+        return response.json();
+      })
       .then((data) => {
         setPosts(data);
         setLoading(false);
@@ -16,20 +25,36 @@ function App() {
       .catch((error) => {
         console.error("Error fetching data:", error);
         setLoading(false);
+        
+        // Trigger the Error Toast Notification
+        setToast({ show: true, message: "⚠️ Error fetching blog updates. Please try again later." });
+        
+        // Automatically hide the toast alert after 4 seconds
+        setTimeout(() => {
+          setToast({ show: false, message: '' });
+        }, 4000);
       });
   }, []);
 
   if (loading) {
-    return <div style={{ padding: '20px', fontSize: '20px' }}>Loading workspace updates...</div>;
+    return <div className="loading-container">Loading workspace updates...</div>;
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1 style={{ borderBottom: '2px solid #333', paddingBottom: '10px' }}>Latest Blog Posts</h1>
+    <div className="blog-container">
+      {/* Dynamic Toast Alert Portal */}
+      {toast.show && (
+        <div className="toast-container">
+          {toast.message}
+        </div>
+      )}
+
+      <h1 className="blog-title">Latest Blog Posts</h1>
+      
       {posts.map((post) => (
-        <article key={post.id} style={{ margin: '40px 0', borderBottom: '1px solid #ccc', paddingBottom: '20px' }}>
-          <h2 dangerouslySetInnerHTML={{ __html: post.title.rendered }} style={{ color: '#0056b3' }} />
-          <div dangerouslySetInnerHTML={{ __html: post.content.rendered }} style={{ lineHeight: '1.6' }} />
+        <article key={post.id} className="post-card">
+          <h2 className="post-title" dangerouslySetInnerHTML={{ __html: post.title.rendered }} />
+          <div className="post-content" dangerouslySetInnerHTML={{ __html: post.content.rendered }} />
         </article>
       ))}
     </div>
